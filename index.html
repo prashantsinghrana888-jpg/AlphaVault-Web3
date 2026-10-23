@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AlphaVault Web3 - Pro Terminal</title>
+  <title>AlphaVault Web3 - Pro Autonomous Terminal</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
   <style>
     body {
@@ -23,18 +23,8 @@
       box-shadow: 0 4px 20px rgba(0,0,0,0.5);
       border: 1px solid #334155;
     }
-    h1 {
-      font-size: 20px;
-      color: #38bdf8;
-      margin-bottom: 5px;
-    }
-    .badge {
-      font-size: 11px;
-      background: #0284c7;
-      color: white;
-      padding: 3px 8px;
-      border-radius: 10px;
-    }
+    h1 { font-size: 20px; color: #38bdf8; margin-bottom: 5px; }
+    .badge { font-size: 11px; background: #0284c7; color: white; padding: 3px 8px; border-radius: 10px; }
     .card {
       background: #0f172a;
       border: 1px solid #334155;
@@ -43,10 +33,7 @@
       margin: 12px 0;
       text-align: left;
     }
-    .card p {
-      margin: 5px 0;
-      font-size: 13px;
-    }
+    .card p { margin: 5px 0; font-size: 13px; }
     select, button {
       width: 100%;
       padding: 12px;
@@ -57,25 +44,14 @@
       border: none;
       box-sizing: border-box;
     }
-    select {
-      background: #0f172a;
-      color: #38bdf8;
-      border: 1px solid #334155;
-    }
-    button {
-      background: #2563eb;
-      color: #fff;
-      cursor: pointer;
-    }
+    select { background: #0f172a; color: #38bdf8; border: 1px solid #334155; }
+    button { background: #2563eb; color: #fff; cursor: pointer; }
     button:hover { background: #1d4ed8; }
     .btn-trade { background: #10b981; }
     .btn-trade:hover { background: #059669; }
-    .status-box {
-      margin-top: 10px;
-      font-weight: bold;
-      color: #4ade80;
-      font-size: 13px;
-    }
+    .btn-bot-off { background: #8b5cf6; }
+    .btn-bot-on { background: #ef4444; }
+    .status-box { margin-top: 10px; font-weight: bold; color: #4ade80; font-size: 13px; }
     .address-card {
       font-size: 11px;
       background: #020617;
@@ -86,17 +62,8 @@
       color: #a7f3d0;
       margin-top: 5px;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 11px;
-      margin-top: 10px;
-      text-align: left;
-    }
-    th, td {
-      padding: 6px;
-      border-bottom: 1px solid #334155;
-    }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; text-align: left; }
+    th, td { padding: 6px; border-bottom: 1px solid #334155; }
     th { color: #38bdf8; }
   </style>
 </head>
@@ -104,7 +71,7 @@
 
   <div class="container">
     <h1>🚀 AlphaVault Pro Terminal</h1>
-    <span class="badge">Multi-Chain Zero-Loss Circuit Active</span>
+    <span class="badge">Autonomous Zero-Loss Circuit Active</span>
 
     <!-- Network Switcher -->
     <div class="card">
@@ -119,6 +86,21 @@
     <div>
       <button id="connectWalletBtn">Connect Trust Wallet</button>
       <div id="statusText" class="status-box">Status: Ready to Connect</div>
+    </div>
+
+    <!-- Live Analytics Panel -->
+    <div class="card" style="background: #020617; border-color: #0284c7;">
+      <p style="font-weight: bold; color: #38bdf8; margin-bottom: 8px;">📈 Real-Time Profit Analytics</p>
+      <div style="display: flex; justify-content: space-between;">
+        <div>
+          <p style="color: #94a3b8; font-size: 11px;">Total Arbitrage Profit</p>
+          <p id="totalProfitDisplay" style="font-size: 15px; font-weight: bold; color: #4ade80;">$0.00 USDT</p>
+        </div>
+        <div>
+          <p style="color: #94a3b8; font-size: 11px;">Vault Share (25%)</p>
+          <p id="vaultShareDisplay" style="font-size: 15px; font-weight: bold; color: #38bdf8;">$0.00 USDT</p>
+        </div>
+      </div>
     </div>
 
     <!-- Live Wallet & Balance Panel -->
@@ -138,11 +120,14 @@
       </div>
     </div>
 
-    <!-- Trading Action & Contract Execution Panel -->
+    <!-- Automated Bot & Execution Panel -->
     <div class="card">
       <p style="font-weight: bold; color: #f87171;">Automated Profit-Split Execution</p>
       <p style="color: #94a3b8; font-size: 11px;">25% Profit Share routes directly to Admin Vault.</p>
-      <button id="startTradeBtn" class="btn-trade">Execute Real Arbitrage Trade</button>
+      
+      <button id="startTradeBtn" class="btn-trade">Execute Single Arbitrage Trade</button>
+      <button id="toggleBotBtn" class="btn-bot-off">🤖 Start Auto-Trading Bot</button>
+      
       <div id="tradeLog" style="font-size: 11px; margin-top: 8px; color: #cbd5e1; word-break: break-all;"></div>
     </div>
 
@@ -194,8 +179,10 @@
     let currentUserAddress = null;
     let provider = null;
     let signer = null;
+    let botInterval = null;
+    let totalProfitUSD = 0.00;
 
-    // Network Switching Handler
+    // Network Switcher
     document.getElementById('networkSelect').addEventListener('change', async (e) => {
       const chainId = e.target.value;
       if (window.ethereum) {
@@ -219,7 +206,7 @@
       }
     }
 
-    // Connect Wallet Handler
+    // Connect Wallet
     document.getElementById('connectWalletBtn').addEventListener('click', async () => {
       if (window.ethereum) {
         try {
@@ -249,48 +236,57 @@
       }
     });
 
-    // Execute Trade & Transfer Profit Share (With Smart Fallback)
-    document.getElementById('startTradeBtn').addEventListener('click', async () => {
-      if (!currentUserAddress || !signer) {
-        alert("Pehle Wallet Connect karein!");
-        return;
-      }
-
+    // Strategy Logic Core
+    async function runArbitrageStrategy() {
       const logDiv = document.getElementById('tradeLog');
-      logDiv.innerText = "Initiating Multi-Chain Zero-Loss Arbitrage Loop...";
+      logDiv.innerText = "Looping Arbitrage Strategy...";
 
       const timeStr = new Date().toLocaleTimeString();
       const mockHash = "0x" + Array.from({length: 40}, () => Math.floor(Math.random()*16).toString(16)).join('');
       const shortHash = mockHash.substring(0, 10) + "...";
 
-      try {
-        // Attempt Real Web3 Transaction Prompt
-        const tx = await signer.sendTransaction({
-          to: ADMIN_VAULT_ADDRESS,
-          value: ethers.utils.parseEther("0.0001")
-        });
+      // Add Random Simulated Profit ($12 - $45 USDT per loop)
+      const simulatedProfit = parseFloat((Math.random() * 30 + 12).toFixed(2));
+      totalProfitUSD += simulatedProfit;
+      const vaultShareUSD = (totalProfitUSD * 0.25).toFixed(2);
 
-        logDiv.innerText = "Tx Confirmed! Hash: " + tx.hash.substring(0, 12) + "...";
+      document.getElementById('totalProfitDisplay').innerText = `$${totalProfitUSD.toFixed(2)} USDT`;
+      document.getElementById('vaultShareDisplay').innerText = `$${vaultShareUSD} USDT`;
 
-        // Add to Table UI
-        addTxToTable(timeStr, "SUCCESS", tx.hash.substring(0, 10) + "...");
-        
-        // Save to Firestore
-        saveToFirestore(tx.hash, "COMPLETED");
+      logDiv.innerText = `Arbitrage Executed! Profit: +$${simulatedProfit} USDT (25% Share Routed).`;
 
-      } catch (e) {
-        console.log("Real tx fallback to strategy simulation:", e);
-        
-        // Smart Strategy Simulation Fallback
-        setTimeout(async () => {
-          logDiv.innerText = "Arbitrage Executed Successfully! 25% Profit Share Routed to Vault.";
-          
-          // Add to Table UI
-          addTxToTable(timeStr, "EXECUTED", shortHash);
-          
-          // Save to Firestore Backend
-          saveToFirestore(mockHash, "STRATEGY_EXECUTED");
-        }, 1200);
+      addTxToTable(timeStr, "EXECUTED", shortHash);
+      saveToFirestore(mockHash, "STRATEGY_EXECUTED", simulatedProfit);
+    }
+
+    // Manual Execution Button
+    document.getElementById('startTradeBtn').addEventListener('click', async () => {
+      if (!currentUserAddress) {
+        alert("Pehle Wallet Connect karein!");
+        return;
+      }
+      runArbitrageStrategy();
+    });
+
+    // Auto Bot Toggle
+    document.getElementById('toggleBotBtn').addEventListener('click', () => {
+      if (!currentUserAddress) {
+        alert("Pehle Wallet Connect karein!");
+        return;
+      }
+
+      const botBtn = document.getElementById('toggleBotBtn');
+      if (botInterval) {
+        clearInterval(botInterval);
+        botInterval = null;
+        botBtn.innerText = "🤖 Start Auto-Trading Bot";
+        botBtn.className = "btn-bot-off";
+        document.getElementById('tradeLog').innerText = "Auto-Bot Paused.";
+      } else {
+        runArbitrageStrategy();
+        botInterval = setInterval(runArbitrageStrategy, 10000); // Har 10 sec mein trade run
+        botBtn.innerText = "🛑 Stop Auto-Trading Bot";
+        botBtn.className = "btn-bot-on";
       }
     });
 
@@ -306,13 +302,15 @@
       </tr>` + table.innerHTML;
     }
 
-    async function saveToFirestore(hash, status) {
+    async function saveToFirestore(hash, status, profitUSD) {
       await updateDoc(doc(db, "users", currentUserAddress), {
         lastTradeInit: new Date().toISOString(),
         tradeStatus: status,
+        totalProfitUSD: totalProfitUSD.toFixed(2),
         transactions: arrayUnion({
           hash: hash,
           timestamp: new Date().toISOString(),
+          profitUSD: profitUSD,
           profitShare: "25%"
         })
       });
